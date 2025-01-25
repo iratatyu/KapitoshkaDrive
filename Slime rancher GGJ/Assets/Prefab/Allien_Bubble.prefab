@@ -126,9 +126,12 @@ MonoBehaviour:
   scale: 2
   reproductionChance: 0.9
   childBubblePrefab: {fileID: 4496034695496980509}
+  monsterPrefab: {fileID: 0}
   maturityTime: 0.5
   deathReplacementPrefab: {fileID: 6366212998603380708, guid: a981daa9ad09d5b41af4974b1f28e902, type: 3}
   deathVFX: {fileID: 3706129813389012521, guid: 79681a9d615d48d458eb0ab1efc37485, type: 3}
+  movementVFXPrefab: {fileID: 0}
+  reproductionCooldown: 1800
   moveSpeed: 5
   moveRadius: 50
 --- !u!54 &1935823886641510855

@@ -1,15 +1,17 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
 public class Bubble : MonoBehaviour
 {
     public string bubbleName;
     public float scale = 4;
-    public float reproductionChance = 0.1f; // Reduced reproduction chance
+    public float reproductionChance = 0.1f;
     public GameObject childBubblePrefab;
+    public GameObject monsterPrefab; // Prefab for the monster
     public float maturityTime = 300f; // 5 minutes
     public GameObject deathReplacementPrefab;
     public GameObject deathVFX;
+    public GameObject movementVFXPrefab; // Prefab for movement VFX
     public float reproductionCooldown = 1800f; // 30 minutes cooldown
 
     public float moveSpeed = 1f; // Speed of movement
@@ -18,8 +20,10 @@ public class Bubble : MonoBehaviour
     private Vector3 targetPosition;
     private bool isMature = true;
     private bool canReproduce = true;
+    private bool isStopped = false; // Flag to control movement
 
     private Rigidbody rb;
+    private GameObject movementVFXInstance;
 
     void Start()
     {
@@ -39,19 +43,38 @@ public class Bubble : MonoBehaviour
         {
             StartCoroutine(MatureCoroutine());
         }
+
+        StartCoroutine(JumpCoroutine());
     }
 
     void Update()
     {
-        MoveTowardsTarget();
+        if (!isStopped)
+        {
+            MoveTowardsTarget();
+        }
     }
 
-    void OnTriggerEnter(Collider other)
+    public void StopMovement()
     {
-        if (isMature && other.CompareTag("DeathZone"))
+        isStopped = true;
+        StopAllCoroutines(); // Stop all ongoing coroutines
+        rb.isKinematic = true; // Make the Rigidbody kinematic
+        rb.linearVelocity = Vector3.zero; // Stop all motion
+        rb.angularVelocity = Vector3.zero;
+        if (movementVFXInstance != null)
         {
-            Die();
+            Destroy(movementVFXInstance); // Stop movement VFX
         }
+    }
+
+    public void ResumeMovement()
+    {
+        isStopped = false;
+        rb.isKinematic = false; // Restore Rigidbody movement
+        SetRandomTargetPosition(); // Reset target for movement
+        StartCoroutine(JumpCoroutine()); // Restart jumping coroutine
+        StartMovementVFX(); // Restart movement VFX
     }
 
     private IEnumerator MatureCoroutine()
@@ -71,29 +94,18 @@ public class Bubble : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log($"{name} collided with {collision.gameObject.name}");
-
         if (isMature && canReproduce && collision.gameObject.TryGetComponent(out Bubble otherBubble))
         {
             if (bubbleName == otherBubble.bubbleName && otherBubble.isMature && otherBubble.scale == 4 && otherBubble.canReproduce)
             {
-                Debug.Log($"{name} is attempting to reproduce with {otherBubble.name}");
                 if (Random.value < reproductionChance)
                 {
                     Reproduce(otherBubble);
                 }
-                else
-                {
-                    Debug.Log("Reproduction attempt failed due to chance.");
-                }
             }
-            else
+            else if (Random.value < 0.05f) // 5% chance to create a monster
             {
-                Debug.Log("Conditions for reproduction not met: " +
-                          $"Matching names: {bubbleName == otherBubble.bubbleName}, " +
-                          $"Both mature: {isMature && otherBubble.isMature}, " +
-                          $"Both scale 4: {scale == 4 && otherBubble.scale == 4}, " +
-                          $"Both can reproduce: {canReproduce && otherBubble.canReproduce}");
+                CreateMonster();
             }
         }
     }
@@ -106,10 +118,14 @@ public class Bubble : MonoBehaviour
         childBubble.GetComponent<Bubble>().scale = 2;
         childBubble.transform.localScale = Vector3.one * 2;
 
-        Debug.Log($"A new child bubble of type {bubbleName} has been created at {spawnPosition}");
-
         StartCoroutine(StartReproductionCooldown());
         otherBubble.StartCoroutine(otherBubble.StartReproductionCooldown());
+    }
+
+    private void CreateMonster()
+    {
+        Instantiate(monsterPrefab, transform.position, Quaternion.identity);
+        Destroy(gameObject); // The bubble turns into a monster
     }
 
     private IEnumerator StartReproductionCooldown()
@@ -141,6 +157,53 @@ public class Bubble : MonoBehaviour
         if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
         {
             SetRandomTargetPosition();
+        }
+    }
+
+    private IEnumerator JumpCoroutine()
+    {
+        while (!isStopped)
+        {
+            yield return new WaitForSeconds(Random.Range(5f, 15f)); // Random delay between jumps
+
+            Vector3 originalPosition = transform.position;
+            Vector3 jumpPosition = originalPosition + new Vector3(0, 4f, 0);
+
+            float jumpTime = 1f; // Time to reach peak
+            float landTime = 1f; // Time to land back
+
+            float elapsedTime = 0f;
+
+            // Move upwards
+            while (elapsedTime < jumpTime)
+            {
+                transform.position = Vector3.Lerp(originalPosition, jumpPosition, elapsedTime / jumpTime);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.position = jumpPosition;
+
+            elapsedTime = 0f;
+
+            // Move downwards
+            while (elapsedTime < landTime)
+            {
+                transform.position = Vector3.Lerp(jumpPosition, originalPosition, elapsedTime / landTime);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.position = originalPosition;
+        }
+    }
+
+    private void StartMovementVFX()
+    {
+        if (movementVFXPrefab != null && movementVFXInstance == null)
+        {
+            movementVFXInstance = Instantiate(movementVFXPrefab, transform.position, Quaternion.identity);
+            movementVFXInstance.transform.SetParent(transform);
         }
     }
 }
