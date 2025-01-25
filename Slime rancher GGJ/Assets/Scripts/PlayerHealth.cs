@@ -20,7 +20,7 @@ public class PlayerHealth : MonoBehaviour
     {
         if (healthText != null)
         {
-            healthText.text = $"HP: {currentHealth}/{maxHealth}";
+            healthText.text = $"{currentHealth}/{maxHealth}";
         }
     }
 

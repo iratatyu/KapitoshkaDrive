@@ -432,6 +432,7 @@
 "Assets/Polytope Studio/Lowpoly_Demos/Environment_Free/Helpers/PlayerMovement.cs"
 "Assets/Scripts/Bubble.cs"
 "Assets/Scripts/DayAndNigth.cs"
+"Assets/Scripts/DeathZone.cs"
 "Assets/Scripts/GunController.cs"
 "Assets/Scripts/Monster.cs"
 "Assets/Scripts/MoveOnCollision.cs"

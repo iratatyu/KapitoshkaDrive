@@ -9,15 +9,16 @@ public class Bubble : MonoBehaviour
     public GameObject childBubblePrefab;
     public GameObject monsterPrefab; // Prefab for the monster
     public float maturityTime = 300f; // 5 minutes
-    public GameObject deathReplacementPrefab;
     public GameObject deathVFX;
     public GameObject movementVFXPrefab; // Prefab for movement VFX
     public float reproductionCooldown = 1800f; // 30 minutes cooldown
+    public GameObject dropPrefab;
 
     public float moveSpeed = 1f; // Speed of movement
     public float moveRadius = 5f; // Radius of random movement
 
     private Vector3 targetPosition;
+    public bool isAdult = true;
     private bool isMature = true;
     private bool canReproduce = true;
     private bool isStopped = false; // Flag to control movement
@@ -83,13 +84,6 @@ public class Bubble : MonoBehaviour
         scale = 4;
         isMature = true;
         transform.localScale = Vector3.one * scale;
-    }
-
-    private void Die()
-    {
-        Instantiate(deathVFX, transform.position, Quaternion.identity);
-        Instantiate(deathReplacementPrefab, transform.position, Quaternion.identity);
-        Destroy(gameObject);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -206,4 +200,26 @@ public class Bubble : MonoBehaviour
             movementVFXInstance.transform.SetParent(transform);
         }
     }
+    public void Die()
+    {
+        if (!isAdult) return; // Тільки дорослі бульбашки можуть бути знищені
+
+        Debug.Log("Bubble has died!");
+
+        // Спавнимо предмет
+        if (dropPrefab != null)
+        {
+            Instantiate(dropPrefab, transform.position, Quaternion.identity);
+        }
+
+        // Спавнимо VFX
+        if (deathVFX != null)
+        {
+            Instantiate(deathVFX, transform.position, Quaternion.identity);
+        }
+
+        // Знищуємо бульбашку
+        Destroy(gameObject);
+    }
 }
+
