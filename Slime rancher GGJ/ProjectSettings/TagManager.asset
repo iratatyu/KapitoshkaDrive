@@ -9,6 +9,7 @@ TagManager:
   - DeathZone
   - "\u0421age"
   - SellZone
+  - Water
   layers:
   - Default
   - TransparentFX
