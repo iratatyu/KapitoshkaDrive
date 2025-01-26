@@ -22,6 +22,7 @@ public class Bubble : MonoBehaviour
     private bool isMature = true;
     private bool canReproduce = true;
     private bool isStopped = false; // Flag to control movement
+    public bool IsHeld { get; set; }
 
     private Rigidbody rb;
     private GameObject movementVFXInstance;

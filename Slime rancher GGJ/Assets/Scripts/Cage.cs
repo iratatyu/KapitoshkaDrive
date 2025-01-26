@@ -1,90 +1,52 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 public class Cage : MonoBehaviour
 {
-    public string playerTag = "Player"; // Тег для гравця
-    public string bubbleTag = "Bubble"; // Тег для бульбашок
-
-    // Список бульбашок, які заніс гравець
-    private HashSet<GameObject> carriedBubbles = new HashSet<GameObject>();
+    public Transform cageCenter; // Центр клітки, куди телепортуються бульбашки
+    public LayerMask bubbleLayer; // Шар бульбашок
+    public LayerMask playerLayer; // Шар гравця
 
     private void OnTriggerEnter(Collider other)
     {
-        // Якщо гравець заходить у клітку
-        if (other.CompareTag(playerTag))
+        // Перевіряємо, чи це бульбашка
+        if (((1 << other.gameObject.layer) & bubbleLayer) != 0)
         {
-            Debug.Log("Player entered the cage.");
-            return;
-        }
+            Bubble bubble = other.GetComponent<Bubble>();
 
-        // Якщо бульбашка заходить у клітку
-        if (other.CompareTag(bubbleTag))
-        {
-            if (carriedBubbles.Contains(other.gameObject))
+            // Якщо бульбашка не несе гравець, телепортуємо її в центр клітки
+            if (bubble != null && !bubble.IsHeld)
             {
-                Debug.Log($"Bubble {other.name} entered the cage (carried by player).");
-                carriedBubbles.Remove(other.gameObject); // Видаляємо з переліку
-            }
-            else
-            {
-                Debug.Log($"Bubble {other.name} entered the cage by itself.");
+                Debug.Log("Бульбашка намагається ввійти в клітку самостійно!");
+                TeleportToCageCenter(other.transform);
             }
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // Якщо гравець виходить із клітки
-        if (other.CompareTag(playerTag))
+        // Перевіряємо, чи це бульбашка
+        if (((1 << other.gameObject.layer) & bubbleLayer) != 0)
         {
-            Debug.Log("Player left the cage.");
-            return;
-        }
+            Bubble bubble = other.GetComponent<Bubble>();
 
-        // Якщо бульбашка намагається вийти з клітки
-        if (other.CompareTag(bubbleTag))
-        {
-            if (!carriedBubbles.Contains(other.gameObject))
+            // Якщо бульбашка несе гравець, дозволяємо їй вийти
+            if (bubble != null && bubble.IsHeld)
             {
-                Debug.Log($"Bubble {other.name} is not allowed to leave the cage!");
-                // Зупиняємо рух і повертаємо бульбашку назад
-                Rigidbody bubbleRb = other.GetComponent<Rigidbody>();
-                if (bubbleRb != null)
-                {
-                    bubbleRb.linearVelocity = Vector3.zero;
-                    bubbleRb.angularVelocity = Vector3.zero;
-                }
-
-                // Переміщуємо бульбашку назад у клітку
-                Vector3 cageCenter = transform.position;
-                other.transform.position = new Vector3(cageCenter.x, other.transform.position.y, cageCenter.z);
+                Debug.Log("Гравець виніс бульбашку з клітки.");
             }
             else
             {
-                Debug.Log($"Bubble {other.name} left the cage (carried by player).");
-                carriedBubbles.Remove(other.gameObject); // Видаляємо з переліку
+                // Якщо бульбашка виходить сама, не дозволяємо
+                Debug.Log("Бульбашка намагається вийти з клітки самостійно!");
+                TeleportToCageCenter(other.transform);
             }
         }
     }
 
-    // Метод для додавання бульбашки, яку заніс гравець
-    public void AddCarriedBubble(GameObject bubble)
+    private void TeleportToCageCenter(Transform bubbleTransform)
     {
-        if (!carriedBubbles.Contains(bubble))
-        {
-            carriedBubbles.Add(bubble);
-            Debug.Log($"Bubble {bubble.name} marked as carried by the player.");
-        }
-    }
-
-    // Метод для видалення бульбашки, якщо потрібно
-    public void RemoveCarriedBubble(GameObject bubble)
-    {
-        if (carriedBubbles.Contains(bubble))
-        {
-            carriedBubbles.Remove(bubble);
-            Debug.Log($"Bubble {bubble.name} removed from carried list.");
-        }
+        // Телепортуємо бульбашку в центр клітки
+        bubbleTransform.position = cageCenter.position;
+        bubbleTransform.GetComponent<Rigidbody>().linearVelocity = Vector3.zero; // Зупиняємо рух
     }
 }
